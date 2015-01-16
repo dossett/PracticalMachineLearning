@@ -1,0 +1,1 @@
+raw <- read.csv("pml-training.csv")
