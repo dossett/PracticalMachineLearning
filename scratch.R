@@ -30,3 +30,7 @@ inTrain <- createDataPartition(y=raw$classe, p=.8, list=FALSE)
 training <- raw[inTrain,]
 testing <- raw[-inTrain,]
 
+
+#PLAY -- flipped train and test for effeciency
+modelFit <- train(testing$classe ~ ., method="rf", data=testing)
+confusionMatrix(training$classe, predict(modelFit, training))
