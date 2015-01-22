@@ -5,18 +5,70 @@ date: "January 22, 2015"
 output: html_document
 ---
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+This analysis considers data from the Human Activity Recognition project.  Our goal is to train a classififer from a set of training data and predict it's accuracy on unseen training data.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+First we load the data and clean it.  We end up dropping almost 2/3 of the columns.  If our final model does not perform well on unseen data, we will revisit this step.
 
-```{r}
-summary(cars)
+```{r cache=TRUE, warning=FALSE, message=FALSE}
+library(caret)
+library(ggplot2)
+raw <- read.csv("pml-training.csv", header = TRUE, na.string=c("NA", "#DIV/0!"))
+
+#first column is just a sequence, not needed
+#second coumn is the person being measured, also not needed
+raw$X <- NULL
+raw$user_name <- NULL
+
+#disregard timestamps
+raw <- raw[, ! grepl("timestamp", names(raw))]
+
+#throw out any columns that are completely missing
+#source for this nice code: http://stackoverflow.com/a/11330265
+raw <- raw[, ! sapply(raw, function(x)all(is.na(x)))]
+
+#Analysis shows that many, many columns are almost completely missing.
+#Throw out any column that is > 90% null.  Adapted from above
+nullCounts <- sapply(raw, function(x)sum(is.na(x)))
+raw <- raw[, nullCounts < (19622 * .9)]
+
+#Get rid of any columns with near zero variance (in practice, one column -- "new window")
+raw <- raw[, ! nearZeroVar(raw, saveMetrics = T)[,4]]
 ```
 
-You can also embed plots, for example:
-
-```{r, echo=FALSE}
-plot(cars)
+Next we split the data into training, validation, and test sets.  
+```{r message=FALSE, cache=TRUE, dependson=-1}
+library(caret)
+set.seed(1976)
+inTrain <- createDataPartition(y=raw$classe, p=.7, list=FALSE)
+training <- raw[inTrain,]
+testAndVal <- raw[-inTrain,]
+inVal <- createDataPartition(y=testAndVal$classe, p=.5, list=FALSE)
+validation <- testAndVal[inVal,]
+testing <- testAndVal[-inVal,]
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Our model building strategy will be:
+
+* Construct three different models from the training set -- simple decision tree, random forest, and naive bayes.  Note that caret will use cross-validation within the training set as it builds these models.
+
+* Measure the accuracy of each model against the validation set.  The most accurate model will be the winner.
+
+* Use the test set to predit the accuracy of the final model on unseen data.  This is the only time the test set is used and no changes to the model will be made as a result of assessing the test set, otherwise we will have compromised our prediction by fitting to the noise in the test set
+
+```{r cache=TRUE, warning=FALSE, message=FALSE, dependson=-1}
+treeFit <- train(training$classe ~ ., method="rpart", data=training)
+randomForestFit <- train(training$classe ~ ., method="rf", data=training)
+naiveBayesFit <- train(training$classe ~ ., method="nb", data=training)
+
+confusionMatrix(validation$classe, predict(treeFit, validation))$overall[c(1,3,4,6)]
+confusionMatrix(validation$classe, predict(randomForestFit, validation))$overall[c(1,3,4,6)]
+confusionMatrix(validation$classe, predict(naiveBayesFit, validation))$overall[c(1,3,4,6)]
+```
+
+All three models have highly significant p-values and the most accurate is __________.
+
+We know look at the held back test data to make our best estimate of out of sample error.
+
+```{r cache=TRUE, dependson=-1}
+confusionMatrix(testing$classe, predict(treeFit, testing))$overall[c(1,3,4,6)]
+```

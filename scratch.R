@@ -30,13 +30,14 @@ set.seed(1976)
 inTrain <- createDataPartition(y=raw$classe, p=.7, list=FALSE)
 training <- raw[inTrain,]
 testAndVal <- raw[-inTrain,]
-inVal <- createDataPartition(y=testAndVal$classe, p=.15, list=FALSE)
+inVal <- createDataPartition(y=testAndVal$classe, p=.5, list=FALSE)
 validation <- testAndVal[inVal,]
 testing <- testAndVal[-inVal,]
 
 
 #Look at three models -- treebag, random forest, and nb
-treeBagFit <- train(training$classe ~ ., method="treebag", data=training)
-randomForestFit <- train(training$classe ~ ., method="treebag", data=training)
-naiveBayesFit <- train(training$classe ~ ., method="treebag", data=training)
-#confusionMatrix(testing$classe, predict(modelFit, testing))
+treeFit <- train(training$classe ~ ., method="rpart", data=training)
+randomForestFit <- train(training$classe ~ ., method="rf", data=training)
+naiveBayesFit <- train(training$classe ~ ., method="nb", data=training)
+
+confusionMatrix(validation$classe, predict(treeFit, validation))$overall[c(1,3,4,6)]
