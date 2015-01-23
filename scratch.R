@@ -36,6 +36,8 @@ testing <- testAndVal[-inVal,]
 
 
 #Look at three models -- treebag, random forest, and nb
+library(doMC)
+
 treeFit <- train(training$classe ~ ., method="rpart", data=training)
 randomForestFit <- train(training$classe ~ ., method="rf", data=training)
 naiveBayesFit <- train(training$classe ~ ., method="nb", data=training)
