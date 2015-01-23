@@ -95,20 +95,30 @@ validation &lt;- testAndVal[inVal,]
 testing &lt;- testAndVal[-inVal,]</code></pre>
 <p>Our model building strategy will be:</p>
 <ul>
-<li><p>Construct three different models from the training set – simple decision tree, random forest, and naive bayes. Note that caret will use cross-validation within the training set as it builds these models.</p></li>
+<li><p>Construct three different models from the training set – simple decision tree, random forest, and naive bayes. Because this is a multi-class classification problem, we do not attempt any generalized linear models. Note that caret will use cross-validation within the training set as it builds these models.</p></li>
 <li><p>Measure the accuracy of each model against the validation set. The most accurate model will be the winner.</p></li>
-<li><p>Use the test set to predit the accuracy of the final model on unseen data. This is the only time the test set is used and no changes to the model will be made as a result of assessing the test set, otherwise we will have compromised our prediction by fitting to the noise in the test set</p></li>
+<li><p>Use the test set to predit the accuracy of the final model on unseen data. This is the only time the test set is used and no changes to the model will be made as a result of assessing the test set, otherwise we will have compromised our prediction by fitting to the noise in the test set.</p></li>
 </ul>
-<pre class="r"><code>treeFit &lt;- train(training$classe ~ ., method=&quot;rpart&quot;, data=training)
+<pre class="r"><code>library(doMC)
+registerDoMC(cores = 6)
+treeFit &lt;- train(training$classe ~ ., method=&quot;rpart&quot;, data=training)
+randomForestFit &lt;- train(training$classe ~ ., method=&quot;rf&quot;, data=training)
+naiveBayesFit &lt;- train(training$classe ~ ., method=&quot;nb&quot;, data=training)
 
 confusionMatrix(validation$classe, predict(treeFit, validation))$overall[c(1,3,4,6)]</code></pre>
 <pre><code>##       Accuracy  AccuracyLower  AccuracyUpper AccuracyPValue 
 ##   5.507985e-01   5.326147e-01   5.688812e-01   1.641959e-82</code></pre>
-<p>All three models have highly significant p-values and the best is __________.</p>
-<p>We know look at the held back test data to make our best estimate of out of sample error.</p>
-<pre class="r"><code>confusionMatrix(testing$classe, predict(treeFit, testing))$overall[c(1,3,4,6)]</code></pre>
+<pre class="r"><code>confusionMatrix(validation$classe, predict(randomForestFit, validation))$overall[c(1,3,4,6)]</code></pre>
 <pre><code>##       Accuracy  AccuracyLower  AccuracyUpper AccuracyPValue 
-##   5.560843e-01   5.379126e-01   5.741443e-01   3.492703e-96</code></pre>
+##      0.9972817      0.9946509      0.9988257      0.0000000</code></pre>
+<pre class="r"><code>confusionMatrix(validation$classe, predict(naiveBayesFit, validation))$overall[c(1,3,4,6)]</code></pre>
+<pre><code>##       Accuracy  AccuracyLower  AccuracyUpper AccuracyPValue 
+##      0.7611281      0.7452979      0.7764374      0.0000000</code></pre>
+<p>All three models have highly significant p-values and the most accurate is random forest.</p>
+<p>We know look at the held back test data to make our best estimate of out of sample error. It is highly unusual to see an accuracy of 100%, but accuracy in the validation set was well over 99%.</p>
+<pre class="r"><code>confusionMatrix(testing$classe, predict(randomForestFit, testing))$overall[c(1,3,4,6)]</code></pre>
+<pre><code>##       Accuracy  AccuracyLower  AccuracyUpper AccuracyPValue 
+##      1.0000000      0.9987469      1.0000000      0.0000000</code></pre>
 
 
 </div>

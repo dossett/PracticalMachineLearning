@@ -49,11 +49,11 @@ testing <- testAndVal[-inVal,]
 
 Our model building strategy will be:
 
-* Construct three different models from the training set -- simple decision tree, random forest, and naive bayes.  Note that caret will use cross-validation within the training set as it builds these models.
+* Construct three different models from the training set -- simple decision tree, random forest, and naive bayes.  Because this is a multi-class classification problem, we do not attempt any generalized linear models.  Note that caret will use cross-validation within the training set as it builds these models.
 
 * Measure the accuracy of each model against the validation set.  The most accurate model will be the winner.
 
-* Use the test set to predit the accuracy of the final model on unseen data.  This is the only time the test set is used and no changes to the model will be made as a result of assessing the test set, otherwise we will have compromised our prediction by fitting to the noise in the test set
+* Use the test set to predit the accuracy of the final model on unseen data.  This is the only time the test set is used and no changes to the model will be made as a result of assessing the test set, otherwise we will have compromised our prediction by fitting to the noise in the test set.
 
 ```{r cache=TRUE, warning=FALSE, message=FALSE, dependson=-1}
 library(doMC)
@@ -69,7 +69,7 @@ confusionMatrix(validation$classe, predict(naiveBayesFit, validation))$overall[c
 
 All three models have highly significant p-values and the most accurate is random forest.
 
-We know look at the held back test data to make our best estimate of out of sample error.
+We know look at the held back test data to make our best estimate of out of sample error.  It is highly unusual to see an accuracy of 100%, but accuracy in the validation set was well over 99%.
 
 ```{r cache=TRUE, dependson=-1}
 confusionMatrix(testing$classe, predict(randomForestFit, testing))$overall[c(1,3,4,6)]
