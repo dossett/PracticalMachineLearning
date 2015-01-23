@@ -5,7 +5,7 @@ date: "January 22, 2015"
 output: html_document
 ---
 
-This analysis considers data from the Human Activity Recognition project.  Our goal is to train a classififer from a set of training data and predict it's accuracy on unseen training data.
+This analysis considers data from the Human Activity Recognition project.  Our goal is to train a classififer from a set of training data and predict its accuracy on unseen training data.
 
 First we load the data and clean it.  We end up dropping almost 2/3 of the columns.  If our final model does not perform well on unseen data, we will revisit this step.
 
@@ -13,6 +13,7 @@ First we load the data and clean it.  We end up dropping almost 2/3 of the colum
 library(caret)
 library(ggplot2)
 raw <- read.csv("pml-training.csv", header = TRUE, na.string=c("NA", "#DIV/0!"))
+origDimension <- dim(raw)
 
 #first column is just a sequence, not needed
 #second coumn is the person being measured, also not needed
@@ -33,6 +34,9 @@ raw <- raw[, nullCounts < (19622 * .9)]
 
 #Get rid of any columns with near zero variance (in practice, one column -- "new window")
 raw <- raw[, ! nearZeroVar(raw, saveMetrics = T)[,4]]
+
+origDimension
+dim(raw)
 ```
 
 Next we split the data into training, validation, and test sets.  
@@ -67,7 +71,7 @@ confusionMatrix(validation$classe, predict(randomForestFit, validation))$overall
 confusionMatrix(validation$classe, predict(naiveBayesFit, validation))$overall[c(1,3,4,6)]
 ```
 
-All three models have highly significant p-values and the most accurate is random forest.
+All three models have highly significant p-values and the most accurate is Random Forest.
 
 We know look at the held back test data to make our best estimate of out of sample error.  It is highly unusual to see an accuracy of 100%, but accuracy in the validation set was well over 99%.
 
